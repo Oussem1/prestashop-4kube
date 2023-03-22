@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prestashop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prestashop
+  template:
+    metadata:
+      labels:
+        app: prestashop
+    spec:
+      containers:
+      - name: prestashop
+        image: prestashop/prestashop:1.7
+        env:
+        - name: PS_FIRSTNAME
+          valueFrom:
+            configMapKeyRef:
+              name: prestashop-configmap
+              key: firstname
+        - name: PS_LASTNAME
+          valueFrom:
+            configMapKeyRef:
+              name: prestashop-configmap
+              key: lastname
+        - name: DB_SERVER
+          value: mysql
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: mysql-user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: mysql-password
+        ports:
+        - containerPort: 80
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prestashop
+spec:
+  type: NodePort
+  selector:
+    app: prestashop
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30080
